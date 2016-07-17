@@ -1010,6 +1010,7 @@ if __name__ == "__main__":
     parser.add_argument('--graphite-host', help='Graphite host', default=graphite_host)
     parser.add_argument('--graphite-port', help='Graphite port', default=graphite_port, type=int)
     parser.add_argument('--use-graphite', help='Send stats to Graphite', action='store_true')
+    parser.add_argument('--metric-prefix', help='Graphite metrics prefix', default='')
     
     args = parser.parse_args()
     log_debug(args)
@@ -1019,11 +1020,13 @@ if __name__ == "__main__":
     
     output = []
     unix_ts = int(time.time())
-    sanitized_host = args.host.replace(':', '').replace('.', '').replace('/', '_')
-    sanitized_host = sanitized_host + '_' + str(args.port)
+    metric_prefix = args.metric_prefix
+    if metric_prefix == '':
+        metric_prefix = args.host.replace(':', '').replace('.', '').replace('/', '_')
+        metric_prefix = 'mysql.' + metric_prefix + '_' + str(args.port)
     for stat in result.split():
         var_name, val = stat.split(':')
-        output.append('mysql.%s.%s %s %d' % (sanitized_host, var_name, val, unix_ts))   
+        output.append('%s.%s %s %d' % (metric_prefix, var_name, val, unix_ts))   
     output = set(output)
     log_debug(['Final result', output])
     if args.use_graphite:
